@@ -2,10 +2,19 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
+// TODO change hardcode
+const allowedOrigins = [
+	"http://localhost:3000",
+	"http://127.0.0.1:3000",
+];
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
-	cors: { origin: "*" },
+	cors: {
+		origin: allowedOrigins,
+		methods: ["GET", "POST"],
+	},
 });
 
 io.on("connection", (socket) => {
@@ -38,5 +47,5 @@ io.on("connection", (socket) => {
 	});
 });
 
-const PORT = 5000;
+const PORT = 5001;
 server.listen(PORT, () => console.log(`🚀 Signaling сервер запущен на порту ${PORT}`));
