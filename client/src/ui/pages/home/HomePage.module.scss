@@ -1,0 +1,31 @@
+.main {
+  height: fit-content;
+  min-height: 100dvh;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-family: system-ui;
+}
+
+.title {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.btn_creator {
+  padding: .6rem 1.4rem;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.text {
+  font-size: .9rem;
+  color: #555;
+}
