@@ -18,15 +18,14 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-	console.log("🔌 Пользователь подключился:", socket.id);
-
 	socket.on("join", (roomId) => {
 		socket.join(roomId);
-		console.log(`➡️ ${socket.id} вошёл в комнату ${roomId}`);
-
 		const clients = io.sockets.adapter.rooms.get(roomId);
-		if (clients.size === 2) {
-			io.to(roomId).emit("ready");
+		console.log(`➡️ ${socket.id} вошёл в комнату ${roomId}, участников: ${clients?.size}`);
+
+		// когда в комнате двое — уведомляем первого
+		if (clients && clients.size === 2) {
+			socket.to(roomId).emit("ready");
 		}
 	});
 
