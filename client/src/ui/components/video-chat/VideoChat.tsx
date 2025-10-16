@@ -24,9 +24,30 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
 
   const [ permissionError, setPermissionError ] = useState<string | null>(null);
 
+  const [ micro, setMicro ] = useState(true);
+  const [ camera, setCamera ] = useState(true);
+
+  const toggleMicro = () => {
+    if (!localStreamRef.current) return;
+    localStreamRef.current.getAudioTracks().forEach((track) => {
+      track.enabled = !track.enabled;
+      setMicro(track.enabled);
+    });
+  };
+
+  const toggleCamera = () => {
+    if (!localStreamRef.current) return;
+    localStreamRef.current.getVideoTracks().forEach((track) => {
+      track.enabled = !track.enabled;
+      setCamera(track.enabled);
+    });
+  };
+
   useEffect(() => {
     socketRef.current = io(SIGNALING_SERVER_URL);
     const socket = socketRef.current;
+
+    const sendCandidate = (c: RTCIceCandidate) => socket.emit("ice-candidate", { roomId, candidate: c });
 
     pcRef.current = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }]});
     const pc = pcRef.current;
@@ -41,7 +62,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     /** Отправляем ICE-кандидаты */
     pc.onicecandidate = (event) => {
       if (!event.candidate) return;
-      socket.emit("ice-candidate", { roomId, candidate: event.candidate });
+      sendCandidate(event.candidate);
     };
 
     /** Получаем локальный медиа-поток */
@@ -56,7 +77,10 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
         /** Добавляем треки */
-        stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+        stream
+          .getTracks()
+          .forEach((track) => pc.addTrack(track, stream));
+        setPermissionError(null);
         console.log("🎥 Локальный поток добавлен");
       } catch (err) {
         console.error("Ошибка доступа к устройствам:", err);
@@ -168,6 +192,16 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
             className={st.video}
           />
         </div>
+      </div>
+
+      <div className={st.controls}>
+        <button onClick={toggleMicro}>
+          {micro ? "🎤 Выкл. микрофон" : "🎤 Вкл. микрофон"}
+        </button>
+
+        <button onClick={toggleCamera}>
+          {camera ? "📷 Выкл. камеру" : "📷 Вкл. камеру"}
+        </button>
       </div>
 
       <div className={st.hint}>
