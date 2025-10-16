@@ -8,6 +8,8 @@ import {
 } from "react";
 import io from "socket.io-client";
 import st from "./VideoChat.module.scss";
+import { useRouter } from "next/navigation";
+import { ROUTER } from "@/shared/constants";
 
 // TODO to env
 const SIGNALING_SERVER_URL = "http://localhost:5001";
@@ -15,6 +17,8 @@ const SIGNALING_SERVER_URL = "http://localhost:5001";
 type Props = { roomId: string };
 
 export const VideoChat: FC<Props> = ({ roomId }) => {
+  const router = useRouter();
+
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -41,6 +45,12 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
       track.enabled = !track.enabled;
       setCamera(track.enabled);
     });
+  };
+
+  const leaveRoom = () => {
+    pcRef.current?.close();
+    socketRef.current?.disconnect();
+    router.push(ROUTER.HOME);
   };
 
   useEffect(() => {
@@ -201,6 +211,10 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
 
         <button onClick={toggleCamera}>
           {camera ? "📷 Выкл. камеру" : "📷 Вкл. камеру"}
+        </button>
+
+        <button onClick={leaveRoom}>
+          ❌ Выйти из комнаты
         </button>
       </div>
 
