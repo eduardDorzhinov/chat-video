@@ -11,6 +11,7 @@ import st from "./VideoChat.module.scss";
 import { useRouter } from "next/navigation";
 import { ROUTER } from "@/shared/constants";
 import clsx from "clsx";
+import { CONNECTION_PLACEHOLDER, ConnectionPlaceholder } from "@/ui/pages/room/config";
 
 // TODO to env
 const SIGNALING_SERVER_URL = "http://localhost:5001";
@@ -27,6 +28,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
 
+  const [ connectionState, setConnectionState ] = useState<ConnectionPlaceholder>(CONNECTION_PLACEHOLDER.CONNECTION);
   const [ permissionError, setPermissionError ] = useState<string | null>(null);
 
   const [ micro, setMicro ] = useState(true);
@@ -74,6 +76,26 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     pc.onicecandidate = (event) => {
       if (!event.candidate) return;
       sendCandidate(event.candidate);
+    };
+
+    pc.onconnectionstatechange = () => {
+      const state = pc.connectionState;
+      console.log("📡 Состояние соединения:", state);
+
+      switch (state) {
+        case "connected":
+          setConnectionState(CONNECTION_PLACEHOLDER.CONNECTED);
+          break;
+        case "disconnected":
+        case "failed":
+          setConnectionState(CONNECTION_PLACEHOLDER.FAILED);
+          break;
+        case "closed":
+          setConnectionState(CONNECTION_PLACEHOLDER.CLOSED);
+          break;
+        default:
+          setConnectionState(CONNECTION_PLACEHOLDER.CONNECTION);
+      }
     };
 
     /** Получаем локальный медиа-поток */
@@ -173,6 +195,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
   return (
     <div className={st.container}>
       <h1 className={st.title}>🎥 Комната {roomId}</h1>
+      <div className={st.status}>{connectionState}</div>
 
       {
         permissionError && (
