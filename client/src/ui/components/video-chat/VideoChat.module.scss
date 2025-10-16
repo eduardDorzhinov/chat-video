@@ -62,3 +62,24 @@
   color: #6b7280;
   text-align: center;
 }
+
+.controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+
+  button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: #1d4ed8;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #2563eb;
+    }
+  }
+}
