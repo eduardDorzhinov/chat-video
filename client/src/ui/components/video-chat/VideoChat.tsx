@@ -10,6 +10,7 @@ import io from "socket.io-client";
 import st from "./VideoChat.module.scss";
 import { useRouter } from "next/navigation";
 import { ROUTER } from "@/shared/constants";
+import clsx from "clsx";
 
 // TODO to env
 const SIGNALING_SERVER_URL = "http://localhost:5001";
@@ -189,7 +190,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
             autoPlay
             muted
             playsInline
-            className={st.video}
+            className={clsx(st.video, st.mirror)}
           />
         </div>
 
