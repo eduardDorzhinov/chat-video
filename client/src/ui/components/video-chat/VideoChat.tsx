@@ -13,9 +13,6 @@ import { ROUTER } from "@/shared/constants";
 import clsx from "clsx";
 import { CONNECTION_PLACEHOLDER, ConnectionPlaceholder } from "@/ui/pages/room/config";
 
-// TODO to env
-const SIGNALING_SERVER_URL = "http://localhost:5001";
-
 type Props = { roomId: string };
 
 export const VideoChat: FC<Props> = ({ roomId }) => {
@@ -57,7 +54,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
   };
 
   useEffect(() => {
-    socketRef.current = io(SIGNALING_SERVER_URL);
+    socketRef.current = io(process.env.NEXT_PUBLIC_SIGNAL_SERVER_URL);
     const socket = socketRef.current;
 
     const sendCandidate = (c: RTCIceCandidate) => socket.emit("ice-candidate", { roomId, candidate: c });

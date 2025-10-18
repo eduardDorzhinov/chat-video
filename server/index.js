@@ -46,5 +46,5 @@ io.on("connection", (socket) => {
 	});
 });
 
-const PORT = 5001;
+const PORT = process.env.SERVER_PORT || 5001;
 server.listen(PORT, () => console.log(`🚀 Signaling сервер запущен на порту ${PORT}`));
