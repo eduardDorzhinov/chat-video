@@ -1,16 +1,27 @@
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import cors from "cors";
 
-// TODO change hardcode
+const app = express();
+
 const allowedOrigins = [
 	process.env.CLIENT_URL,
 	"http://localhost:3000",
 	"http://127.0.0.1:3000",
-];
+].filter(Boolean);
 
-const app = express();
+console.log("⚙️ CLIENT_URL:", process.env.CLIENT_URL);
+
+app.use(
+	cors({
+		origin: allowedOrigins,
+		credentials: true,
+	})
+);
+
 const server = createServer(app);
+
 const io = new Server(server, {
 	cors: {
 		origin: allowedOrigins,
