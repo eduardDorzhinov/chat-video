@@ -11,7 +11,7 @@ const allowedOrigins = [
 	"http://127.0.0.1:3000",
 ].filter(Boolean);
 
-console.log("⚙️ CLIENT_URL:", process.env.CLIENT_URL);
+console.log("✅ Разрешённые origin:", allowedOrigins);
 
 app.use(
 	cors({
