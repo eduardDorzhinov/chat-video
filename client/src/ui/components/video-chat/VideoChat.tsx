@@ -18,36 +18,21 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     localVideoRef,
     remoteVideoRef,
     pcRef,
-    localStreamRef,
+    localStreamRef: _localStreamRef,
     socketRef,
     connectionState: _connectionState,
     permissionError: _permissionError,
+    cameraFacing: _cameraFacing,
+    hasMultipleCameras,
     switchCamera,
+    toggleMicro,
+    toggleCamera,
+    micro,
+    camera,
   } = useConnection({ roomId });
-
-  const [ hasMultipleCameras, setHasMultipleCameras ] = useState(false);
-
-  const [ micro, setMicro ] = useState(true);
-  const [ camera, setCamera ] = useState(true);
 
   const [ showControls, setShowControls ] = useState(true);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const toggleMicro = () => {
-    if (!localStreamRef.current) return;
-    localStreamRef.current.getAudioTracks().forEach((track) => {
-      track.enabled = !track.enabled;
-      setMicro(track.enabled);
-    });
-  };
-
-  const toggleCamera = () => {
-    if (!localStreamRef.current) return;
-    localStreamRef.current.getVideoTracks().forEach((track) => {
-      track.enabled = !track.enabled;
-      setCamera(track.enabled);
-    });
-  };
 
   const leaveRoom = () => {
     pcRef.current?.close();
@@ -73,22 +58,6 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
-
-  useEffect(() => {
-    const checkCameras = async () => {
-      try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoInputs = devices.filter((device) => device.kind === "videoinput");
-        setHasMultipleCameras(videoInputs.length > 1);
-      } catch (err) {
-        console.warn("Ошибка при проверке камер:", err);
-        setHasMultipleCameras(false);
-      }
-    };
-
-    checkCameras();
-  }, []);
-
 
   return (
     <div
@@ -120,7 +89,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
               {micro ? "🎤" : "🔇"}
             </button>
             <button onClick={toggleCamera}>
-              {camera ? "📷" : "🚫"}
+              {camera ? "📷✅" : "📷🚫"}
             </button>
             <button
               className={st.hangup}
@@ -131,7 +100,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
             {
               hasMultipleCameras && (
                 <button onClick={switchCamera}>
-                  🔄
+                  📷🔄
                 </button>
               )
             }

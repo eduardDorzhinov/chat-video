@@ -1,18 +1,10 @@
 import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
+  useEffect, useRef, useState,
 } from "react";
 import io from "socket.io-client";
-import {
-  CAMERA_MODE,
-  CameraMode,
-  CONNECTION_PLACEHOLDER,
-  ConnectionPlaceholder,
-} from "@/ui/pages/room/config";
+import { CONNECTION_PLACEHOLDER, ConnectionPlaceholder } from "@/ui/pages/room/config";
 
-export const useConnection = ({ roomId }: { roomId: string, }) => {
+export const useConnection = ({ roomId }: { roomId: string }) => {
   const initialized = useRef(false);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -25,40 +17,71 @@ export const useConnection = ({ roomId }: { roomId: string, }) => {
   const [ connectionState, setConnectionState ] = useState<ConnectionPlaceholder>(CONNECTION_PLACEHOLDER.CONNECTION);
   const [ permissionError, setPermissionError ] = useState<string | null>(null);
 
-  const [ cameraFacing, setCameraFacing ] = useState<CameraMode>(CAMERA_MODE.USER);
+  const [ cameraFacing, setCameraFacing ] = useState<"user" | "environment">("user");
+  const [ hasMultipleCameras, setHasMultipleCameras ] = useState(false);
+  const [ micro, setMicro ] = useState(true);
+  const [ camera, setCamera ] = useState(true);
 
-  const switchCamera = useCallback(async () => {
-    if (!localStreamRef.current) return;
-
-    // Останавливаем текущие видео-треки
-    localStreamRef.current.getVideoTracks().forEach((track) => track.stop());
-
-    // Запрашиваем новый поток с другой камерой
+  const initLocalStream = async (facing: "user" | "environment" = "user") => {
     try {
-      const newStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: cameraFacing === CAMERA_MODE.USER ? CAMERA_MODE.ENV : CAMERA_MODE.USER },
+      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing },
         audio: true,
       });
 
-      // Обновляем локальный поток
-      localStreamRef.current = newStream;
+      localStreamRef.current = stream;
 
-      // Меняем источник видео
-      if (localVideoRef.current) localVideoRef.current.srcObject = newStream;
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
 
-      // Заменяем треки в PeerConnection
-      const pc = pcRef.current;
-      if (pc) {
-        const senders = pc.getSenders().filter((s) => s.track?.kind === "video");
-        senders.forEach((sender, i) => sender.replaceTrack(newStream.getVideoTracks()[ i ]));
-      }
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter((d) => d.kind === "videoinput");
+      setHasMultipleCameras(videoInputs.length > 1);
 
-      // Обновляем состояние facing
-      setCameraFacing((prev) => (prev === "user" ? "environment" : "user"));
+      setCameraFacing(facing);
+      setCamera(true);
+      setMicro(true);
+
+      return stream;
     } catch (err) {
-      console.error("Ошибка при переключении камеры:", err);
+      console.error("Ошибка доступа к камере/микрофону:", err);
+      setPermissionError("Нет доступа к камере/микрофону");
+      return null;
     }
-  }, [ cameraFacing ]);
+  };
+
+  const switchCamera = async () => {
+    if (!localStreamRef.current) return;
+
+    const newFacing = cameraFacing === "user" ? "environment" : "user";
+    const newStream = await initLocalStream(newFacing);
+
+    if (!newStream || !pcRef.current) return;
+
+    const sender = pcRef.current.getSenders().find((s) => s.track?.kind === "video");
+    if (sender) sender.replaceTrack(newStream.getVideoTracks()[ 0 ]);
+  };
+
+  const toggleMicro = () => {
+    if (!localStreamRef.current) return;
+    localStreamRef.current.getAudioTracks().forEach((track) => {
+      track.enabled = !track.enabled;
+      setMicro(track.enabled);
+    });
+  };
+
+  const toggleCamera = () => {
+    if (!localStreamRef.current) return;
+
+    if (camera) {
+      localStreamRef.current.getVideoTracks().forEach((track) => track.enabled = false);
+      setCamera(false);
+    } else {
+      localStreamRef.current.getVideoTracks().forEach((track) => track.enabled = true);
+      setCamera(true);
+    }
+  };
 
   useEffect(() => {
     if (initialized.current) return;
@@ -69,46 +92,35 @@ export const useConnection = ({ roomId }: { roomId: string, }) => {
 
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_SIGNAL_SERVER_URL}/turn-credentials`);
-
         if (res.ok) {
           const data = await res.json();
-          if (data?.iceServers) {
-            iceServers = data.iceServers;
-            console.log("🧊 Получены ICE-серверы:", iceServers);
-          }
-        } else {
-          console.warn("⚠️ Не удалось получить TURN креды:", res.status);
+          if (data?.iceServers) iceServers = data.iceServers;
         }
       } catch (err) {
         console.warn("⚠️ Ошибка при запросе TURN-кредов:", err);
       }
 
-      /** Инициализируем Socket.IO */
+      // Socket.IO
       socketRef.current = io(process.env.NEXT_PUBLIC_SIGNAL_SERVER_URL);
       const socket = socketRef.current;
 
-      /** Создаём PeerConnection с динамическими ICE-серверами */
+      // PeerConnection
       pcRef.current = new RTCPeerConnection({ iceServers });
       const pc = pcRef.current;
 
-      const sendCandidate = (c: RTCIceCandidate) => socket.emit("ice-candidate", { roomId, candidate: c });
-
-      /** Отображаем поток, когда приходит от удалённого пользователя */
+      // Обработка удалённого потока
       pc.ontrack = (event) => {
         const [ remoteStream ] = event.streams;
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
       };
 
-      /** Отправляем ICE-кандидаты */
+      // ICE кандидаты
       pc.onicecandidate = (event) => {
-        if (event.candidate) sendCandidate(event.candidate);
+        if (event.candidate) socket.emit("ice-candidate", { roomId, candidate: event.candidate });
       };
 
-      /** Обновляем статус соединения */
       pc.onconnectionstatechange = () => {
-        const state = pc.connectionState;
-        console.log("📡 Состояние соединения:", state);
-        switch (state) {
+        switch (pc.connectionState) {
           case "connected":
             setConnectionState(CONNECTION_PLACEHOLDER.CONNECTED);
             break;
@@ -124,31 +136,22 @@ export const useConnection = ({ roomId }: { roomId: string, }) => {
         }
       };
 
-      /** Получаем локальный поток */
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      localStreamRef.current = stream;
+      // Получаем локальный поток (с фронтальной камерой по умолчанию)
+      const stream = await initLocalStream("user");
+      if (stream) stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-      stream.getTracks().forEach((t) => pc.addTrack(t, stream));
       setPermissionError(null);
 
-      console.log("🎥 Локальный поток добавлен");
-
-      /** События Socket.IO */
-      socket.on("connect", () => {
-        console.log("🟢 Подключено к signaling-серверу");
-        socket.emit("join", roomId);
-      });
+      // Socket события
+      socket.on("connect", () => socket.emit("join", roomId));
 
       socket.on("ready", async () => {
-        console.log("Комната готова — создаём offer (инициатор)");
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         socket.emit("offer", { roomId, sdp: offer });
       });
 
       socket.on("offer", async (payload) => {
-        console.log("📩 Получен offer (ответчик)");
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
@@ -156,21 +159,18 @@ export const useConnection = ({ roomId }: { roomId: string, }) => {
       });
 
       socket.on("answer", async (payload) => {
-        console.log("📩 Получен answer (инициатор)");
         await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
       });
 
       socket.on("ice-candidate", async (payload) => {
         try {
           await pc.addIceCandidate(payload.candidate);
-          console.log("Добавлен ICE-кандидат");
         } catch (err) {
-          console.error("Ошибка ICE:", err);
+          console.error(err);
         }
       });
 
       return () => {
-        console.log("🔻 Завершение соединения");
         socket.disconnect();
         pc.close();
       };
@@ -187,6 +187,12 @@ export const useConnection = ({ roomId }: { roomId: string, }) => {
     socketRef,
     connectionState,
     permissionError,
+    cameraFacing,
+    hasMultipleCameras,
     switchCamera,
+    toggleMicro,
+    toggleCamera,
+    micro,
+    camera,
   };
 };
