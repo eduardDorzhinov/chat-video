@@ -2,8 +2,13 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
+import crypto from "crypto";
 
 const app = express();
+
+const TURN_SECRET = process.env.TURN_SERVER_SECRET || ""; // тот же, что в turnserver.conf
+const TURN_REALM = process.env.TURN_REALM || "";
+const TURN_TTL = 3600; // время жизни кредов (сек)
 
 const allowedOrigins = [
 	process.env.CLIENT_URL,
@@ -11,14 +16,37 @@ const allowedOrigins = [
 	"http://127.0.0.1:3000",
 ].filter(Boolean);
 
-console.log("✅ Разрешённые origin:", allowedOrigins);
-
 app.use(
 	cors({
 		origin: allowedOrigins,
 		credentials: true,
 	})
 );
+
+/** ============== TURN ============== */
+app.get("/turn-credentials", (req, res) => {
+	const timestamp = Math.floor(Date.now() / 1000) + TURN_TTL;
+	const username = `${timestamp}`;
+	const password = crypto
+		.createHmac("sha1", TURN_SECRET)
+		.update(username)
+		.digest("base64");
+
+	const iceServers = [
+		{ urls: "stun:stun.l.google.com:19302" },
+		{
+			urls: [
+				`turn:${TURN_REALM}:3478?transport=udp`,
+				`turn:${TURN_REALM}:3478?transport=tcp`,
+				`turns:${TURN_REALM}:5349?transport=tcp`,
+			],
+			username,
+			credential: password,
+		},
+	];
+
+	res.json({ username, credential: password, ttl: TURN_TTL, iceServers });
+});
 
 const server = createServer(app);
 
@@ -35,7 +63,6 @@ io.on("connection", (socket) => {
 		const clients = io.sockets.adapter.rooms.get(roomId);
 		console.log(`➡️ ${socket.id} вошёл в комнату ${roomId}, участников: ${clients?.size}`);
 
-		// когда в комнате двое — уведомляем первого
 		if (clients && clients.size === 2) {
 			socket.to(roomId).emit("ready");
 		}
@@ -59,4 +86,7 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.SERVER_PORT || 5001;
-server.listen(PORT, () => console.log(`🚀 Signaling сервер запущен на порту ${PORT}`));
+server.listen(PORT, () => {
+	console.log(`🚀 Signaling сервер запущен на порту ${PORT}`)
+	console.log(`🌍 TURN realm: ${TURN_REALM}`);
+});
