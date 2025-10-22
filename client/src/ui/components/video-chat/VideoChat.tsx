@@ -1,6 +1,8 @@
 "use client";
 
-import { FC, useState } from "react";
+import {
+  FC, useEffect, useRef, useState,
+} from "react";
 import st from "./VideoChat.module.scss";
 import { useRouter } from "next/navigation";
 import { ROUTER } from "@/shared/constants";
@@ -25,6 +27,9 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
   const [ micro, setMicro ] = useState(true);
   const [ camera, setCamera ] = useState(true);
 
+  const [ showControls, setShowControls ] = useState(true);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const toggleMicro = () => {
     if (!localStreamRef.current) return;
     localStreamRef.current.getAudioTracks().forEach((track) => {
@@ -47,73 +52,63 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     router.push(ROUTER.HOME);
   };
 
-  const inviteOnClick = () => {
-    const url = `${window.location.origin}/room/${roomId}`;
-    navigator.clipboard.writeText(url);
+  // const inviteOnClick = () => {
+  //   const url = `${window.location.origin}/room/${roomId}`;
+  //   navigator.clipboard.writeText(url);
+  // };
+
+  const toggleControls = () => {
+    if (showControls) return;
+    setShowControls(true);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setShowControls(false), 3000);
   };
 
+  useEffect(() => {
+    timeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   return (
-    <div className={st.container}>
-      <h1 className={st.title}>🎥 Комната {roomId}</h1>
-      <div className={st.status}>{connectionState}</div>
+    <div
+      className={st.videoWrapper}
+      onClick={toggleControls}
+    >
+      <video
+        ref={remoteVideoRef}
+        autoPlay
+        playsInline
+        className={clsx(st.video, st.remoteVideo)}
+      />
+
+      <video
+        ref={localVideoRef}
+        autoPlay
+        muted
+        playsInline
+        className={clsx(st.video, st.localVideo)}
+      />
 
       {
-        permissionError && (
-          <div className={st.error}>
-            Нет доступа к камере/микрофону: {permissionError}
+        showControls && (
+          <div className={st.controlsOverlay}>
+            <button onClick={toggleMicro}>
+              {micro ? "🎤" : "🔇"}
+            </button>
+            <button onClick={toggleCamera}>
+              {camera ? "📷" : "🚫"}
+            </button>
+            <button
+              className={st.hangup}
+              onClick={leaveRoom}
+            >
+              ❌
+            </button>
           </div>
         )
       }
-
-      <div className={st.videos}>
-        <div className={st.videoBox}>
-          <div className={st.label}>Локальное</div>
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            playsInline
-            className={clsx(st.video, st.mirror)}
-          />
-        </div>
-
-        <div className={st.videoBox}>
-          <div className={st.label}>Удалённое</div>
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            playsInline
-            className={st.video}
-          />
-        </div>
-      </div>
-
-      <div className={st.controls}>
-        <button onClick={toggleMicro}>
-          {micro ? "🎤 Выкл. микрофон" : "🎤 Вкл. микрофон"}
-        </button>
-
-        <button onClick={toggleCamera}>
-          {camera ? "📷 Выкл. камеру" : "📷 Вкл. камеру"}
-        </button>
-
-        <button onClick={leaveRoom}>
-          ❌ Выйти из комнаты
-        </button>
-      </div>
-
-      <div className={st.hint}>
-        Отправь другу ссылку:
-        {" "}
-        <code>{`${typeof window !== "undefined" ? window.location.origin : ""}/room/${roomId}`}</code>
-
-        <button
-          className={st.copy_button}
-          onClick={inviteOnClick}
-        >
-          📋 Скопировать
-        </button>
-      </div>
     </div>
   );
 };
