@@ -13,6 +13,8 @@ import { ROUTER } from "@/shared/constants";
 import clsx from "clsx";
 import { CONNECTION_PLACEHOLDER, ConnectionPlaceholder } from "@/ui/pages/room/config";
 
+const CLEAR_TURN_SERVER = (process.env.NEXT_PUBLIC_TURN_SERVER_URL || "").replace(/^https:\/\//, "");
+
 type Props = { roomId: string };
 
 export const VideoChat: FC<Props> = ({ roomId }) => {
@@ -59,7 +61,13 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
 
     const sendCandidate = (c: RTCIceCandidate) => socket.emit("ice-candidate", { roomId, candidate: c });
 
-    pcRef.current = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }]});
+    pcRef.current = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }, {
+        urls: [ `turn:${CLEAR_TURN_SERVER}:${process.env.NEXT_PUBLIC_TURN_SERVER_PORT}?transport=udp`, `turn:${CLEAR_TURN_SERVER}:${process.env.NEXT_PUBLIC_TURN_SERVER_PORT}?transport=tcp` ],
+        username: "user",
+        credential: "my-secret-key",
+      }],
+    });
     const pc = pcRef.current;
 
     /** Отображаем поток, когда приходит от удалённого пользователя */
