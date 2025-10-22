@@ -20,8 +20,8 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     pcRef,
     localStreamRef,
     socketRef,
-    connectionState,
-    permissionError,
+    connectionState: _connectionState,
+    permissionError: _permissionError,
     switchCamera,
   } = useConnection({ roomId });
 
