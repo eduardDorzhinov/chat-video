@@ -1,10 +1,16 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
 } from "react";
 import io from "socket.io-client";
-import { CONNECTION_PLACEHOLDER, ConnectionPlaceholder } from "@/ui/pages/room/config";
+import {
+  CAMERA_MODE,
+  CameraMode,
+  CONNECTION_PLACEHOLDER,
+  ConnectionPlaceholder,
+} from "@/ui/pages/room/config";
 
 export const useConnection = ({ roomId }: { roomId: string, }) => {
   const initialized = useRef(false);
@@ -18,6 +24,41 @@ export const useConnection = ({ roomId }: { roomId: string, }) => {
 
   const [ connectionState, setConnectionState ] = useState<ConnectionPlaceholder>(CONNECTION_PLACEHOLDER.CONNECTION);
   const [ permissionError, setPermissionError ] = useState<string | null>(null);
+
+  const [ cameraFacing, setCameraFacing ] = useState<CameraMode>(CAMERA_MODE.USER);
+
+  const switchCamera = useCallback(async () => {
+    if (!localStreamRef.current) return;
+
+    // Останавливаем текущие видео-треки
+    localStreamRef.current.getVideoTracks().forEach((track) => track.stop());
+
+    // Запрашиваем новый поток с другой камерой
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: cameraFacing === CAMERA_MODE.USER ? CAMERA_MODE.ENV : CAMERA_MODE.USER },
+        audio: true,
+      });
+
+      // Обновляем локальный поток
+      localStreamRef.current = newStream;
+
+      // Меняем источник видео
+      if (localVideoRef.current) localVideoRef.current.srcObject = newStream;
+
+      // Заменяем треки в PeerConnection
+      const pc = pcRef.current;
+      if (pc) {
+        const senders = pc.getSenders().filter((s) => s.track?.kind === "video");
+        senders.forEach((sender, i) => sender.replaceTrack(newStream.getVideoTracks()[ i ]));
+      }
+
+      // Обновляем состояние facing
+      setCameraFacing((prev) => (prev === "user" ? "environment" : "user"));
+    } catch (err) {
+      console.error("Ошибка при переключении камеры:", err);
+    }
+  }, [ cameraFacing ]);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -146,5 +187,6 @@ export const useConnection = ({ roomId }: { roomId: string, }) => {
     socketRef,
     connectionState,
     permissionError,
+    switchCamera,
   };
 };

@@ -22,7 +22,10 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     socketRef,
     connectionState,
     permissionError,
+    switchCamera,
   } = useConnection({ roomId });
+
+  const [ hasMultipleCameras, setHasMultipleCameras ] = useState(false);
 
   const [ micro, setMicro ] = useState(true);
   const [ camera, setCamera ] = useState(true);
@@ -52,10 +55,10 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     router.push(ROUTER.HOME);
   };
 
-  // const inviteOnClick = () => {
-  //   const url = `${window.location.origin}/room/${roomId}`;
-  //   navigator.clipboard.writeText(url);
-  // };
+  const inviteOnClick = () => {
+    const url = `${window.location.origin}/room/${roomId}`;
+    navigator.clipboard.writeText(url);
+  };
 
   const toggleControls = () => {
     if (showControls) return;
@@ -70,6 +73,22 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    const checkCameras = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoInputs = devices.filter((device) => device.kind === "videoinput");
+        setHasMultipleCameras(videoInputs.length > 1);
+      } catch (err) {
+        console.warn("Ошибка при проверке камер:", err);
+        setHasMultipleCameras(false);
+      }
+    };
+
+    checkCameras();
+  }, []);
+
 
   return (
     <div
@@ -94,6 +113,9 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
       {
         showControls && (
           <div className={st.controlsOverlay}>
+            <button onClick={inviteOnClick}>
+              {"➕👤"}
+            </button>
             <button onClick={toggleMicro}>
               {micro ? "🎤" : "🔇"}
             </button>
@@ -106,6 +128,13 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
             >
               ❌
             </button>
+            {
+              hasMultipleCameras && (
+                <button onClick={switchCamera}>
+                  🔄
+                </button>
+              )
+            }
           </div>
         )
       }
