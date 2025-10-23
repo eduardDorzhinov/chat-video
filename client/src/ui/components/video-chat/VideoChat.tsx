@@ -36,6 +36,8 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
   } = useConnection({ roomId });
 
   const [ showControls, setShowControls ] = useState(true);
+  const [ isLocalVideoMain, setIsLocalVideoMain ] = useState(true);
+
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const leaveRoom = () => {
@@ -71,30 +73,59 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
 
   return (
     <div
-      className={st.videoWrapper}
-      onClick={toggleControls}
+      className={st.wrap}
+      onClick={
+        () => {
+          if (showControls) return;
+          toggleControls();
+        }
+      }
       onMouseMove={showControlsAction}
     >
       <video
-        ref={remoteVideoRef}
+        ref={isLocalVideoMain ? localVideoRef : remoteVideoRef}
         autoPlay
-        playsInline
-        className={clsx(st.video, st.remoteVideo)}
-      />
-
-      <video
-        ref={localVideoRef}
-        autoPlay
-        muted
         playsInline
         className={
           clsx(
             st.video,
-            st.localVideo,
-            cameraFacing === CAMERA_MODE.USER && st.mirror,
+            st.main_video,
+            isLocalVideoMain && cameraFacing === CAMERA_MODE.USER && st.mirror,
           )
         }
+        muted={isLocalVideoMain}
       />
+
+      <div className={clsx(st.small_video_wrap, showControls && st.enlarged)}>
+        <video
+          ref={isLocalVideoMain ? remoteVideoRef : localVideoRef}
+          autoPlay
+          playsInline
+          className={
+            clsx(
+              st.video,
+              st.small_video,
+              !isLocalVideoMain && cameraFacing === CAMERA_MODE.USER && st.mirror,
+            )
+          }
+          muted={!isLocalVideoMain}
+        />
+        {
+          showControls && (
+            <button
+              className={st.switch_btn}
+              onClick={
+                (e) => {
+                  e.stopPropagation();
+                  setIsLocalVideoMain((p) => !p);
+                }
+              }
+            >
+              🔁
+            </button>
+          )
+        }
+      </div>
 
       <div className={st.overlay}>
         {
