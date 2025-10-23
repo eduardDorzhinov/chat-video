@@ -91,12 +91,6 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
             <button onClick={toggleCamera}>
               {camera ? "📷✅" : "📷🚫"}
             </button>
-            <button
-              className={st.hangup}
-              onClick={leaveRoom}
-            >
-              ❌
-            </button>
             {
               hasMultipleCameras && (
                 <button onClick={switchCamera}>
@@ -104,6 +98,13 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
                 </button>
               )
             }
+            <button
+              className={st.hangup}
+              onClick={leaveRoom}
+            >
+              ❌
+            </button>
+
           </div>
         )
       }
