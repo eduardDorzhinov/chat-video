@@ -25,7 +25,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     localStreamRef: _localStreamRef,
     socketRef,
     connectionState: _connectionState,
-    permissionError: _permissionError,
+    permissionError,
     cameraFacing,
     hasMultipleCameras,
     switchCamera,
@@ -96,34 +96,50 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
         }
       />
 
-      {
-        showControls && (
-          <div className={st.controlsOverlay}>
-            <button onClick={inviteOnClick}>
-              {"➕👤"}
-            </button>
-            <button onClick={toggleMicro}>
-              {micro ? "🎤" : "🔇"}
-            </button>
-            <button onClick={toggleCamera}>
-              {camera ? "📷✅" : "📷🚫"}
-            </button>
-            {
-              hasMultipleCameras && (
-                <button onClick={switchCamera}>
-                  📷🔄
-                </button>
-              )
-            }
-            <button
-              className={st.hangup}
-              onClick={leaveRoom}
-            >
-              ❌
-            </button>
-          </div>
-        )
-      }
+      <div className={st.overlay}>
+        {
+          showControls && (
+            <div className={st.controls_overlay}>
+              <button onClick={inviteOnClick}>
+                {"➕👤"}
+              </button>
+              <button onClick={toggleMicro}>
+                {micro ? "🎤" : "🔇"}
+              </button>
+              <button onClick={toggleCamera}>
+                {camera ? "📷✅" : "📷🚫"}
+              </button>
+              {
+                hasMultipleCameras && (
+                  <button onClick={switchCamera}>
+                    📷🔄
+                  </button>
+                )
+              }
+              <button
+                className={st.hangup}
+                onClick={leaveRoom}
+              >
+                ❌
+              </button>
+            </div>
+          )
+        }
+
+        <div className={st.status_overlay}>
+          {
+            permissionError ? (
+              <span className={st.status_text}>нет доступа к камере и микрофону</span>
+            ) : !micro && !camera ? (
+              <span className={st.status_text}>камера и микрофон выключены</span>
+            ) : !camera ? (
+              <span className={st.status_text}>камера выключена</span>
+            ) : !micro ? (
+              <span className={st.status_text}>микрофон выключен</span>
+            ) : null
+          }
+        </div>
+      </div>
     </div>
   );
 };
