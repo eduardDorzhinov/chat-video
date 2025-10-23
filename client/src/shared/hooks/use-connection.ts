@@ -2,7 +2,12 @@ import {
   useEffect, useRef, useState,
 } from "react";
 import io from "socket.io-client";
-import { CONNECTION_PLACEHOLDER, ConnectionPlaceholder } from "@/ui/pages/room/config";
+import {
+  CAMERA_MODE,
+  CameraMode,
+  CONNECTION_PLACEHOLDER,
+  ConnectionPlaceholder,
+} from "@/ui/pages/room/config";
 
 export const useConnection = ({ roomId }: { roomId: string }) => {
   const initialized = useRef(false);
@@ -17,12 +22,12 @@ export const useConnection = ({ roomId }: { roomId: string }) => {
   const [ connectionState, setConnectionState ] = useState<ConnectionPlaceholder>(CONNECTION_PLACEHOLDER.CONNECTION);
   const [ permissionError, setPermissionError ] = useState<string | null>(null);
 
-  const [ cameraFacing, setCameraFacing ] = useState<"user" | "environment">("user");
+  const [ cameraFacing, setCameraFacing ] = useState<CameraMode>(CAMERA_MODE.USER);
   const [ hasMultipleCameras, setHasMultipleCameras ] = useState(false);
   const [ micro, setMicro ] = useState(true);
   const [ camera, setCamera ] = useState(true);
 
-  const initLocalStream = async (facing: "user" | "environment" = "user") => {
+  const initLocalStream = async (facing: CameraMode = CAMERA_MODE.USER) => {
     try {
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
 
@@ -54,7 +59,7 @@ export const useConnection = ({ roomId }: { roomId: string }) => {
   const switchCamera = async () => {
     if (!localStreamRef.current) return;
 
-    const newFacing = cameraFacing === "user" ? "environment" : "user";
+    const newFacing = cameraFacing === CAMERA_MODE.USER ? CAMERA_MODE.ENV : CAMERA_MODE.USER;
     const newStream = await initLocalStream(newFacing);
 
     if (!newStream || !pcRef.current) return;
