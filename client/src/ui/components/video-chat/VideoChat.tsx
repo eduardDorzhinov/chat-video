@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { ROUTER } from "@/shared/constants";
 import clsx from "clsx";
 import { useConnection } from "@/shared/hooks/use-connection";
+import { CAMERA_MODE } from "@/ui/pages/room/config";
 
 type Props = { roomId: string };
 
@@ -22,7 +23,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     socketRef,
     connectionState: _connectionState,
     permissionError: _permissionError,
-    cameraFacing: _cameraFacing,
+    cameraFacing,
     hasMultipleCameras,
     switchCamera,
     toggleMicro,
@@ -76,7 +77,13 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
         autoPlay
         muted
         playsInline
-        className={clsx(st.video, st.localVideo)}
+        className={
+          clsx(
+            st.video,
+            st.localVideo,
+            cameraFacing === CAMERA_MODE.USER && st.mirror,
+          )
+        }
       />
 
       {
@@ -104,7 +111,6 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
             >
               ❌
             </button>
-
           </div>
         )
       }

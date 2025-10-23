@@ -28,8 +28,11 @@
   border-radius: 12px;
   border: 2px solid white;
   object-fit: cover;
-  transform: scaleX(-1);
   box-shadow: 0 0 8px rgba(0,0,0,0.4);
+
+  .mirror {
+    transform: scaleX(-1);
+  }
 }
 
 .controlsOverlay {
