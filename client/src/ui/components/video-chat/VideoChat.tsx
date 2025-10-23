@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { ROUTER } from "@/shared/constants";
 import clsx from "clsx";
 import { useConnection } from "@/shared/hooks/use-connection";
-import { CAMERA_MODE } from "@/ui/pages/room/config";
+import { CAMERA_MODE, HIDE_CONTROLS_MS } from "@/ui/pages/room/config";
 
 type Props = { roomId: string };
 
@@ -53,11 +53,17 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     if (showControls) return;
     setShowControls(true);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+    timeoutRef.current = setTimeout(() => setShowControls(false), HIDE_CONTROLS_MS);
+  };
+
+  const showControlsAction = () => {
+    if (!showControls) setShowControls(true);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setShowControls(false), HIDE_CONTROLS_MS);
   };
 
   useEffect(() => {
-    timeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+    timeoutRef.current = setTimeout(() => setShowControls(false), HIDE_CONTROLS_MS);
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
@@ -67,6 +73,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     <div
       className={st.videoWrapper}
       onClick={toggleControls}
+      onMouseMove={showControlsAction}
     >
       <video
         ref={remoteVideoRef}

@@ -13,3 +13,5 @@ export const CAMERA_MODE = {
 } as const;
 
 export type CameraMode = typeof CAMERA_MODE[keyof typeof CAMERA_MODE];
+
+export const HIDE_CONTROLS_MS = 5000;
