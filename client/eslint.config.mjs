@@ -4,6 +4,7 @@ import { FlatCompat } from "@eslint/eslintrc";
 import globals from "globals";
 import stylistic from '@stylistic/eslint-plugin';
 import reactHooks from "eslint-plugin-react-hooks";
+import multilinesBraces from "./tools/eslint/multiline-braces.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -186,6 +187,16 @@ const eslintConfig = [
       "@stylistic/type-annotation-spacing": "error",
       "@stylistic/type-generic-spacing": ["error"],
       "@stylistic/type-named-tuple-spacing": ["error"],
+    },
+  },
+  {
+    files: ['**/*.{ts,tsx}'],
+    ignores: ['dist'],
+    plugins: {
+      'multiline-braces': multilinesBraces,
+    },
+    rules: {
+      'multiline-braces/multiline-braces': ['error', { maxProperties: 2 }],
     },
   },
 ];

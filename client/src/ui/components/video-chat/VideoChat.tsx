@@ -1,7 +1,10 @@
 "use client";
 
 import {
-  FC, useEffect, useRef, useState,
+  FC,
+  useEffect,
+  useRef,
+  useState,
 } from "react";
 import st from "./VideoChat.module.scss";
 import { useRouter } from "next/navigation";
