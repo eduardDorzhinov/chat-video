@@ -136,14 +136,18 @@ export const useConnection = ({ roomId }: { roomId: string }) => {
         }
       };
 
-      // Получаем локальный поток (с фронтальной камерой по умолчанию)
-      const stream = await initLocalStream("user");
-      if (stream) stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      socket.on("connect", async () => {
+        const stream = await initLocalStream("user");
+        if (stream) {
+          stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+          socket.emit("join", roomId);
+        }
+        setPermissionError(null);
+      });
 
-      setPermissionError(null);
-
-      // Socket события
-      socket.on("connect", () => socket.emit("join", roomId));
+      socket.io.on("reconnect", () => {
+        if (localStreamRef.current) socket.emit("join", roomId);
+      });
 
       socket.on("ready", async () => {
         const offer = await pc.createOffer();
