@@ -11,7 +11,10 @@ import { useRouter } from "next/navigation";
 import { ROUTER } from "@/shared/constants";
 import clsx from "clsx";
 import { useConnection } from "@/shared/hooks/use-connection";
-import { CAMERA_MODE, HIDE_CONTROLS_MS } from "@/ui/pages/room/config";
+import {
+  CAMERA_MODE,
+  HIDE_CONTROLS_MS,
+} from "@/ui/pages/room/config";
 
 type Props = { roomId: string };
 
@@ -70,6 +73,15 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
+
+
+  const description = (() => {
+    if (permissionError) return "нет доступа к камере и микрофону";
+    if (!micro && !camera) return "камера и микрофон выключены";
+    if (!camera) return "камера выключена";
+    if (!micro) return "микрофон выключен";
+    return null;
+  })();
 
   return (
     <div
@@ -159,15 +171,9 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
 
         <div className={st.status_overlay}>
           {
-            permissionError ? (
-              <span className={st.status_text}>нет доступа к камере и микрофону</span>
-            ) : !micro && !camera ? (
-              <span className={st.status_text}>камера и микрофон выключены</span>
-            ) : !camera ? (
-              <span className={st.status_text}>камера выключена</span>
-            ) : !micro ? (
-              <span className={st.status_text}>микрофон выключен</span>
-            ) : null
+            description && (
+              <span className={st.status_text}>{description}</span>
+            )
           }
         </div>
       </div>
