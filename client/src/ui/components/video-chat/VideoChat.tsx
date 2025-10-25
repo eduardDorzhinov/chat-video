@@ -76,7 +76,8 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
   }, []);
 
   useEffect(() => {
-    if (remoteConnected) setIsLocalVideoMain(false);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!remoteConnected) setIsLocalVideoMain(false);
   }, [ remoteConnected ]);
 
   const description = (() => {
