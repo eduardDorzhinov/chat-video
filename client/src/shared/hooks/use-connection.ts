@@ -23,10 +23,11 @@ export const useConnection = ({ roomId }: { roomId: string }) => {
 
   const [ connectionState, setConnectionState ] = useState<ConnectionPlaceholder>(CONNECTION_PLACEHOLDER.CONNECTION);
   const [ permissionError, setPermissionError ] = useState<string | null>(null);
+  const [ remoteConnected, setRemoteConnected ] = useState(false);
 
   const [ cameraFacing, setCameraFacing ] = useState<CameraMode>(CAMERA_MODE.USER);
   const [ hasMultipleCameras, setHasMultipleCameras ] = useState(false);
-  const [ micro, setMicro ] = useState(true);
+  const [ micro, setMicro ] = useState(false);
   const [ camera, setCamera ] = useState(true);
 
   const initLocalStream = async (facing: CameraMode = CAMERA_MODE.USER) => {
@@ -129,13 +130,16 @@ export const useConnection = ({ roomId }: { roomId: string }) => {
       pc.onconnectionstatechange = () => {
         switch (pc.connectionState) {
           case "connected":
+            setRemoteConnected(true);
             setConnectionState(CONNECTION_PLACEHOLDER.CONNECTED);
             break;
           case "disconnected":
           case "failed":
+            setRemoteConnected(false);
             setConnectionState(CONNECTION_PLACEHOLDER.FAILED);
             break;
           case "closed":
+            setRemoteConnected(false);
             setConnectionState(CONNECTION_PLACEHOLDER.CLOSED);
             break;
           default:
@@ -160,6 +164,7 @@ export const useConnection = ({ roomId }: { roomId: string }) => {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         socket.emit("offer", { roomId, sdp: offer });
+        setRemoteConnected(true);
       });
 
       socket.on("offer", async (payload) => {
@@ -205,5 +210,6 @@ export const useConnection = ({ roomId }: { roomId: string }) => {
     toggleCamera,
     micro,
     camera,
+    remoteConnected,
   };
 };

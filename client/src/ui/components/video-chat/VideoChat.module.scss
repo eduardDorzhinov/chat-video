@@ -36,6 +36,10 @@
     width: 180px;
     height: 120px;
   }
+
+  &.hide {
+    opacity: 0;
+  }
 }
 
 .small_video {

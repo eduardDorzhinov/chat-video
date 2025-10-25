@@ -36,6 +36,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     toggleCamera,
     micro,
     camera,
+    remoteConnected,
   } = useConnection({ roomId });
 
   const [ showControls, setShowControls ] = useState(true);
@@ -108,7 +109,15 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
         muted={isLocalVideoMain}
       />
 
-      <div className={clsx(st.small_video_wrap, showControls && st.enlarged)}>
+      <div
+        className={
+          clsx(
+            st.small_video_wrap,
+            showControls && st.enlarged,
+            !remoteConnected && st.hide,
+          )
+        }
+      >
         <video
           ref={isLocalVideoMain ? remoteVideoRef : localVideoRef}
           autoPlay
@@ -133,7 +142,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
                 }
               }
             >
-              🔁
+              ↖️
             </button>
           )
         }
