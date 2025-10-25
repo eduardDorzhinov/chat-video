@@ -27,7 +27,7 @@ export const useConnection = ({ roomId }: { roomId: string }) => {
 
   const [ cameraFacing, setCameraFacing ] = useState<CameraMode>(CAMERA_MODE.USER);
   const [ hasMultipleCameras, setHasMultipleCameras ] = useState(false);
-  const [ micro, setMicro ] = useState(false);
+  const [ micro, setMicro ] = useState(true);
   const [ camera, setCamera ] = useState(true);
 
   const initLocalStream = async (facing: CameraMode = CAMERA_MODE.USER) => {
