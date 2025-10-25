@@ -40,7 +40,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
   } = useConnection({ roomId });
 
   const [ showControls, setShowControls ] = useState(true);
-  const [ isLocalVideoMain, setIsLocalVideoMain ] = useState(true);
+  const [ isLocalVideoMain, setIsLocalVideoMain ] = useState(!remoteConnected);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -75,6 +75,9 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (remoteConnected) setIsLocalVideoMain(false);
+  }, [ remoteConnected ]);
 
   const description = (() => {
     if (permissionError) return "нет доступа к камере и микрофону";
@@ -96,57 +99,49 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
       onMouseMove={showControlsAction}
     >
       <video
-        ref={isLocalVideoMain ? localVideoRef : remoteVideoRef}
+        ref={localVideoRef}
+        autoPlay
+        muted
+        playsInline
+        className={
+          clsx(
+            st.video,
+            cameraFacing === CAMERA_MODE.USER && st.mirror,
+            isLocalVideoMain ? st.main_video : st.small_video,
+            showControls && st.enlarged,
+          )
+        }
+      />
+
+      <video
+        ref={remoteVideoRef}
         autoPlay
         playsInline
         className={
           clsx(
             st.video,
-            st.main_video,
-            isLocalVideoMain && cameraFacing === CAMERA_MODE.USER && st.mirror,
+            !isLocalVideoMain ? st.main_video : st.small_video,
+            !remoteConnected && st.hide,
+            showControls && st.enlarged,
           )
         }
-        muted={isLocalVideoMain}
       />
 
-      <div
-        className={
-          clsx(
-            st.small_video_wrap,
-            showControls && st.enlarged,
-            !remoteConnected && st.hide,
-          )
-        }
-      >
-        <video
-          ref={isLocalVideoMain ? remoteVideoRef : localVideoRef}
-          autoPlay
-          playsInline
-          className={
-            clsx(
-              st.video,
-              st.small_video,
-              !isLocalVideoMain && cameraFacing === CAMERA_MODE.USER && st.mirror,
-            )
-          }
-          muted={!isLocalVideoMain}
-        />
-        {
-          showControls && (
-            <button
-              className={st.switch_btn}
-              onClick={
-                (e) => {
-                  e.stopPropagation();
-                  setIsLocalVideoMain((p) => !p);
-                }
+      {
+        remoteConnected && (
+          <button
+            className={clsx(st.switch_btn, showControls ? st.show_btn : st.hide_btn)}
+            onClick={
+              (e) => {
+                e.stopPropagation();
+                setIsLocalVideoMain((p) => !p);
               }
-            >
-              ↖️
-            </button>
-          )
-        }
-      </div>
+            }
+          >
+            ↖️
+          </button>
+        )
+      }
 
       <div className={st.overlay}>
         {
