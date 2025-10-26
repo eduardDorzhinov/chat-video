@@ -137,10 +137,17 @@ export const useConnection = ({ roomId }: { roomId: string }) => {
           case "failed":
             setRemoteConnected(false);
             setConnectionState(CONNECTION_PLACEHOLDER.FAILED);
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = null;
+            }
             break;
           case "closed":
             setRemoteConnected(false);
             setConnectionState(CONNECTION_PLACEHOLDER.CLOSED);
+            console.log(1);
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = null;
+            }
             break;
           default:
             setConnectionState(CONNECTION_PLACEHOLDER.CONNECTION);
@@ -184,6 +191,11 @@ export const useConnection = ({ roomId }: { roomId: string }) => {
         } catch (err) {
           console.error(err);
         }
+      });
+
+      socket.on("peer-left", () => {
+        setRemoteConnected(false);
+        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
       });
 
       return () => {
