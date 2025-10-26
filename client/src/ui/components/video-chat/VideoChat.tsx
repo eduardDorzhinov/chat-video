@@ -108,7 +108,7 @@ export const VideoChat: FC<Props> = ({ roomId }) => {
           clsx(
             st.video,
             cameraFacing === CAMERA_MODE.USER && st.mirror,
-            isLocalVideoMain ? st.main_video : st.small_video,
+            isLocalVideoMain || !remoteConnected ? st.main_video : st.small_video,
             showControls && st.enlarged,
           )
         }

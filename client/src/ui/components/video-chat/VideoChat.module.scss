@@ -1,8 +1,7 @@
 .wrap {
   position: relative;
   width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
   background: black;
   overflow: hidden;
 }
@@ -82,9 +81,8 @@
   position: absolute;
   z-index: 5;
   width: 100%;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -93,10 +91,14 @@
 }
 
 .controls_overlay {
+  padding: 12px;
+  width: 100%;
   display: flex;
+  justify-content: center;
   gap: 20px;
   opacity: 0.9;
   transition: opacity 0.3s;
+  background: linear-gradient(180deg, #4b4b4b9e, #b2b2b200);
 
   button {
     width: 60px;
